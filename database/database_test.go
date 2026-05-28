@@ -41,7 +41,7 @@ func TestDatabase_NewConnection(t *testing.T) {
 }
 
 func TestDatabase_GetPool(t *testing.T) {
-	db := &Database{
+	db := &Database[noopLogger]{
 		Pool:   nil,
 		logger: NewNoopLogger(),
 	}
@@ -92,7 +92,7 @@ func TestTruncateSQL(t *testing.T) {
 }
 
 func TestDatabase_Close(t *testing.T) {
-	db := &Database{
+	db := &Database[noopLogger]{
 		Pool:   nil,
 		logger: NewNoopLogger(),
 	}
@@ -103,7 +103,7 @@ func TestDatabase_Close(t *testing.T) {
 }
 
 func TestDatabase_Shutdown(t *testing.T) {
-	db := &Database{
+	db := &Database[noopLogger]{
 		Pool:   nil,
 		logger: NewNoopLogger(),
 	}

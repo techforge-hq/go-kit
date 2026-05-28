@@ -12,7 +12,7 @@ import (
 
 const workUnitTestTable = `public.work_unit_tx_test`
 
-func setupWorkUnitIntegration(t *testing.T) (ctx context.Context, db *Database, router *ContextRouter, wu *PgWorkUnit) {
+func setupWorkUnitIntegration(t *testing.T) (ctx context.Context, db *Database[noopLogger], router *ContextRouter, wu *PgWorkUnit) {
 	t.Helper()
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
@@ -39,7 +39,7 @@ func setupWorkUnitIntegration(t *testing.T) (ctx context.Context, db *Database, 
 	return ctx, db, router, wu
 }
 
-func countWorkUnitTestRows(t *testing.T, ctx context.Context, db *Database) int {
+func countWorkUnitTestRows(t *testing.T, ctx context.Context, db *Database[noopLogger]) int {
 	t.Helper()
 	rows, err := db.Query(ctx, `SELECT COUNT(*) FROM `+workUnitTestTable)
 	require.NoError(t, err)
