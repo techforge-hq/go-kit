@@ -4,13 +4,8 @@ go 1.25.0
 
 require (
 	github.com/stretchr/testify v1.11.1
-	github.com/techforge-hq/go-kit/httpresponse v0.0.0
-	github.com/techforge-hq/go-kit/logger v0.0.0
-)
-
-replace (
-	github.com/techforge-hq/go-kit/httpresponse => ../httpresponse
-	github.com/techforge-hq/go-kit/logger => ../logger
+	github.com/techforge-hq/go-kit/httpresponse v0.0.0-20260528002726-afbb0b453759
+	github.com/techforge-hq/go-kit/logger v0.0.0-20260528002726-afbb0b453759
 )
 
 require (
