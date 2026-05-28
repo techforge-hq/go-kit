@@ -19,18 +19,19 @@ func In(value any, initialArgCount int) Result {
 		}
 
 		args := make([]any, 0, len(stringValues))
-		sql := "("
+		var sql strings.Builder
+		sql.WriteString("(")
 		for i, v := range stringValues {
 			args = append(args, v)
 			if i > 0 {
-				sql += ", "
+				sql.WriteString(", ")
 			}
-			sql += fmt.Sprintf("$%d", initialArgCount+i)
+			fmt.Fprintf(&sql, "$%d", initialArgCount+i)
 		}
-		sql += ")"
+		sql.WriteString(")")
 
 		return Result{
-			SQL:  sql,
+			SQL:  sql.String(),
 			Args: args,
 		}
 	}
@@ -42,18 +43,19 @@ func In(value any, initialArgCount int) Result {
 		}
 
 		args := make([]any, 0, valSlice.Len())
-		sql := "("
+		var sql strings.Builder
+		sql.WriteString("(")
 		for i := 0; i < valSlice.Len(); i++ {
 			args = append(args, valSlice.Index(i).Interface())
 			if i > 0 {
-				sql += ", "
+				sql.WriteString(", ")
 			}
-			sql += fmt.Sprintf("$%d", initialArgCount+i)
+			sql.WriteString(fmt.Sprintf("$%d", initialArgCount+i))
 		}
-		sql += ")"
+		sql.WriteString(")")
 
 		return Result{
-			SQL:  sql,
+			SQL:  sql.String(),
 			Args: args,
 		}
 	}
