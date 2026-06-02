@@ -36,6 +36,24 @@ func TestNewServer_CustomRouteWithErrorMiddleware(t *testing.T) {
 	require.Equal(t, httpresponse.ContentTypeProblemJSON, rec.Header().Get("Content-Type"))
 }
 
+func TestNewServer_DatastarProblemResponse(t *testing.T) {
+	s := NewServer(Config{Port: 0, ServiceName: "test"}, logger.NewNoop(), func(mux *http.ServeMux) {
+		mux.HandleFunc("POST /api/login", func(w http.ResponseWriter, r *http.Request) {
+			httpresponse.BadRequest(w, r, "invalid password")
+		})
+	})
+
+	req := httptest.NewRequest(http.MethodPost, "/api/login", nil)
+	req.Header.Set(httpresponse.HeaderDatastarRequest, "true")
+	rec := httptest.NewRecorder()
+	s.http.Handler.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, "text/event-stream", rec.Header().Get("Content-Type"))
+	assert.Contains(t, rec.Body.String(), "event: datastar-patch-signals")
+	assert.Contains(t, rec.Body.String(), `"detail":"invalid password"`)
+}
+
 func TestRecoverMiddleware(t *testing.T) {
 	log := logger.NewNoop()
 	handler := recoverMiddleware(log, true)(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {

@@ -88,6 +88,16 @@ func (rw *responseWriter) WriteHeader(status int) {
 	rw.ResponseWriter.WriteHeader(status)
 }
 
+func (rw *responseWriter) Flush() {
+	if flusher, ok := rw.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+
+func (rw *responseWriter) Unwrap() http.ResponseWriter {
+	return rw.ResponseWriter
+}
+
 func corsMiddleware(allowedOrigins []string) func(http.Handler) http.Handler {
 	if len(allowedOrigins) == 0 {
 		return permissiveCORSMiddleware
