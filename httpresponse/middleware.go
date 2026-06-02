@@ -31,7 +31,7 @@ func ErrorMiddleware(config ErrorMiddlewareConfig, handler HandlerFunc) http.Han
 func handleError(w http.ResponseWriter, r *http.Request, err error, config ErrorMiddlewareConfig) {
 	var problem ProblemDetail
 	if errors.As(err, &problem) {
-		Problem(w, problem.WithInstance(r.URL.Path))
+		Problem(w, r, problem.WithInstance(r.URL.Path))
 		return
 	}
 
@@ -40,5 +40,5 @@ func handleError(w http.ResponseWriter, r *http.Request, err error, config Error
 		p = p.WithDetail(err.Error())
 	}
 
-	Problem(w, p)
+	Problem(w, r, p)
 }

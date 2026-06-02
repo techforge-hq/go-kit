@@ -63,8 +63,9 @@ func TestWithMeta(t *testing.T) {
 
 func TestProblemResponse(t *testing.T) {
 	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/api/users", nil)
 	problem := ErrBadRequest.WithDetail("invalid input").WithInstance("/api/users")
-	Problem(w, problem)
+	Problem(w, r, problem)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Equal(t, ContentTypeProblemJSON, w.Header().Get("Content-Type"))
@@ -78,6 +79,22 @@ func TestProblemResponse(t *testing.T) {
 	assert.Equal(t, "/api/users", pd.Instance)
 }
 
+func TestProblemResponse_DatastarRequest(t *testing.T) {
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/api/users", nil)
+	r.Header.Set(HeaderDatastarRequest, "true")
+	problem := ErrBadRequest.WithDetail("invalid input").WithInstance("/api/users")
+
+	Problem(w, r, problem)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "text/event-stream", w.Header().Get("Content-Type"))
+	assert.NotEqual(t, ContentTypeProblemJSON, w.Header().Get("Content-Type"))
+	assert.Contains(t, w.Body.String(), "event: datastar-patch-signals")
+	assert.Contains(t, w.Body.String(), `"status":400`)
+	assert.Contains(t, w.Body.String(), `"detail":"invalid input"`)
+}
+
 func TestBadRequest(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/api/users", nil)
@@ -89,6 +106,28 @@ func TestBadRequest(t *testing.T) {
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &pd))
 	assert.Equal(t, "missing field", pd.Detail)
 	assert.Equal(t, "/api/users", pd.Instance)
+}
+
+func TestBadRequest_WithProblemExtensions(t *testing.T) {
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/api/users", nil)
+
+	BadRequest(w, r, "invalid input", WithProblemExtensions(map[string]any{
+		"errors": map[string][]string{
+			"email": {"must be a valid email"},
+			"name":  {"is required"},
+		},
+	}))
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	var pd ProblemDetail
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &pd))
+
+	errors, ok := pd.Extensions["errors"].(map[string]any)
+	require.True(t, ok)
+	assert.Equal(t, []any{"must be a valid email"}, errors["email"])
+	assert.Equal(t, []any{"is required"}, errors["name"])
 }
 
 func TestNotFound(t *testing.T) {
@@ -130,9 +169,13 @@ func TestConflict(t *testing.T) {
 func TestUnprocessableEntity(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/api/users", nil)
-	UnprocessableEntity(w, r, "invalid email format")
+	UnprocessableEntity(w, r, "invalid email format", WithProblemExtension("field", "email"))
 
 	assert.Equal(t, http.StatusUnprocessableEntity, w.Code)
+
+	var pd ProblemDetail
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &pd))
+	assert.Equal(t, "email", pd.Extensions["field"])
 }
 
 func TestInternalServerError(t *testing.T) {
