@@ -30,7 +30,7 @@ func recoverMiddleware(log logger.Logger, debug bool) func(http.Handler) http.Ha
 					if debug {
 						p = p.WithDetail(fmtRecover(rec))
 					}
-					httpresponse.Problem(w, p)
+					httpresponse.Problem(w, r, p)
 				}
 			}()
 			next.ServeHTTP(w, r)
