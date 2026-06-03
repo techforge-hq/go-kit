@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/stretchr/testify v1.11.1
-	github.com/techforge-hq/go-kit/dafi v0.0.0
+	github.com/techforge-hq/go-kit/dafi v0.0.0-20260528005659-5afcaab05b60
 )
 
 require (
@@ -12,5 +12,3 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/techforge-hq/go-kit/dafi => ../dafi
