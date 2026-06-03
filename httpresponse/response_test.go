@@ -95,6 +95,24 @@ func TestProblemResponse_DatastarRequest(t *testing.T) {
 	assert.Contains(t, w.Body.String(), `"detail":"invalid input"`)
 }
 
+func TestUnprocessableEntity_DatastarRequestWithProblemExtensions(t *testing.T) {
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/api/users", nil)
+	r.Header.Set(HeaderDatastarRequest, "true")
+
+	UnprocessableEntity(w, r, "invalid input", WithProblemExtensions(map[string]any{
+		"errors": map[string][]string{
+			"email":    {"is required"},
+			"password": {"is required"},
+		},
+	}))
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "text/event-stream", w.Header().Get("Content-Type"))
+	assert.Contains(t, w.Body.String(), "event: datastar-patch-signals")
+	assert.Contains(t, w.Body.String(), `"extensions":{"errors":{"email":["is required"],"password":["is required"]}}`)
+}
+
 func TestBadRequest(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/api/users", nil)

@@ -29,6 +29,24 @@ type ProblemDetail struct {
 	Extensions map[string]any `json:"extensions,omitempty"`
 }
 
+// ProblemDetailSignals is the global signals payload emitted for problem responses.
+type ProblemDetailSignals struct {
+	// Type is a URI reference that identifies the problem type.
+	Type string `json:"type"`
+
+	// Title is a short, human-readable summary of the problem type.
+	Title string `json:"title"`
+
+	// Status is the HTTP status code.
+	Status int `json:"status"`
+
+	// Detail is a human-readable explanation specific to this occurrence.
+	Detail string `json:"detail,omitempty"`
+
+	// Instance is a URI reference that identifies the specific occurrence.
+	Instance string `json:"instance,omitempty"`
+}
+
 // NewProblemDetail creates a new ProblemDetail with the given type, title, and status.
 func NewProblemDetail(problemType, title string, status int) ProblemDetail {
 	return ProblemDetail{
