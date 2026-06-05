@@ -2,11 +2,26 @@ package server
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/techforge-hq/go-kit/httpresponse"
 	"github.com/techforge-hq/go-kit/logger"
 )
+
+var defaultCORSAllowedHeaders = []string{
+	"Origin",
+	"Content-Type",
+	"Accept",
+	"Authorization",
+}
+
+func resolveCORSAllowedHeaders(custom []string) string {
+	if len(custom) == 0 {
+		return strings.Join(defaultCORSAllowedHeaders, ", ")
+	}
+	return strings.Join(custom, ", ")
+}
 
 func chain(handler http.Handler, middlewares ...func(http.Handler) http.Handler) http.Handler {
 	for i := len(middlewares) - 1; i >= 0; i-- {
@@ -98,27 +113,30 @@ func (rw *responseWriter) Unwrap() http.ResponseWriter {
 	return rw.ResponseWriter
 }
 
-func corsMiddleware(allowedOrigins []string) func(http.Handler) http.Handler {
+func corsMiddleware(allowedOrigins, allowedHeaders []string) func(http.Handler) http.Handler {
+	headers := resolveCORSAllowedHeaders(allowedHeaders)
 	if len(allowedOrigins) == 0 {
-		return permissiveCORSMiddleware
+		return permissiveCORSMiddleware(headers)
 	}
-	return strictCORSMiddleware(allowedOrigins)
+	return strictCORSMiddleware(allowedOrigins, headers)
 }
 
-func permissiveCORSMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, PUT, PATCH, POST, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
+func permissiveCORSMiddleware(allowedHeaders string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, PUT, PATCH, POST, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
+			if r.Method == http.MethodOptions {
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
-func strictCORSMiddleware(allowedOrigins []string) func(http.Handler) http.Handler {
+func strictCORSMiddleware(allowedOrigins []string, allowedHeaders string) func(http.Handler) http.Handler {
 	allowed := make(map[string]struct{}, len(allowedOrigins))
 	for _, origin := range allowedOrigins {
 		allowed[origin] = struct{}{}
@@ -136,7 +154,7 @@ func strictCORSMiddleware(allowedOrigins []string) func(http.Handler) http.Handl
 			}
 
 			w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, PUT, PATCH, POST, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
+			w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
 			w.Header().Set("Access-Control-Max-Age", "86400")
 
 			if r.Method == http.MethodOptions {

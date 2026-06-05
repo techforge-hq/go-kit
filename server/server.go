@@ -19,6 +19,10 @@ type Config struct {
 	// CORSAllowedOrigins lists browser origins allowed for credentialed cross-origin API calls.
 	// Empty enables permissive CORS (fine for local dev).
 	CORSAllowedOrigins []string
+	// CORSAllowedHeaders lists headers permitted in Access-Control-Allow-Headers for
+	// preflight responses. Empty uses defaultCORSAllowedHeaders. Add custom auth/CSRF
+	// headers here (e.g. "X-CSRF-Token", "X-Request-ID") when consumers send them.
+	CORSAllowedHeaders []string
 }
 
 // HealthChecker reports dependency health for /health.
@@ -61,7 +65,7 @@ func NewServer(config Config, log logger.Logger, registerRoutes RouteFunc) *Serv
 
 	handler := chain(
 		mux,
-		corsMiddleware(config.CORSAllowedOrigins),
+		corsMiddleware(config.CORSAllowedOrigins, config.CORSAllowedHeaders),
 		requestLogMiddleware(s.logger),
 		recoverMiddleware(s.logger, config.Debug),
 	)
